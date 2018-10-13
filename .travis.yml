@@ -20,6 +20,7 @@ jobs:
       directories:
       - $HOME/sfml-cache
     before_script:
+      - sdkmanager --update
       - yes | sdkmanager --licenses
     script:
       - chmod +x tests/travis_android.sh
