@@ -227,18 +227,9 @@ namespace tgui
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef TGUI_REMOVE_DEPRECATED_CODE
     float Text::getExtraHorizontalPadding(const Text& text)
     {
         return getExtraHorizontalPadding(text.getFont(), text.getCharacterSize(), text.getStyle());
-    }
-#endif
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    float Text::getExtraHorizontalPadding() const
-    {
-        return getExtraHorizontalPadding(getFont(), getCharacterSize(), getStyle());
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -250,20 +241,6 @@ namespace tgui
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    float Text::getExtraHorizontalOffset() const
-    {
-        return getExtraHorizontalOffset(getFont(), getCharacterSize(), getStyle());
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    float Text::getExtraHorizontalOffset(Font font, unsigned int characterSize, TextStyle textStyle)
-    {
-        return getLineHeight(font, characterSize, textStyle) / 6.f;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     float Text::getExtraVerticalPadding(unsigned int characterSize)
     {
         return std::max(1.f, std::round(characterSize / 8.f));
@@ -271,18 +248,9 @@ namespace tgui
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#ifndef TGUI_REMOVE_DEPRECATED_CODE
     float Text::getLineHeight(const Text& text)
     {
         return getLineHeight(text.getFont(), text.getCharacterSize(), text.getStyle());
-    }
-#endif
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    float Text::getLineHeight() const
-    {
-        return getLineHeight(getFont(), getCharacterSize(), getStyle());
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -291,53 +259,6 @@ namespace tgui
     {
         const float extraVerticalSpace = Text::calculateExtraVerticalSpace(font, characterSize, textStyle);
         return font.getLineSpacing(characterSize) + extraVerticalSpace;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-#ifndef TGUI_REMOVE_DEPRECATED_CODE
-    float Text::getLineWidth(const Text& text)
-    {
-        return getLineWidth(text.getString(), text.getFont(), text.getCharacterSize(), text.getStyle());
-    }
-#endif
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    float Text::getLineWidth() const
-    {
-        return getLineWidth(getString(), getFont(), getCharacterSize(), getStyle());
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    float Text::getLineWidth(const sf::String &text, Font font, unsigned int characterSize, TextStyle textStyle)
-    {
-        if (font == nullptr)
-            return 0.0f;
-
-        bool bold = (textStyle & sf::Text::Bold) != 0;
-
-        float width = 0.0f;
-        std::uint32_t prevChar = 0;
-        for (std::size_t i = 0; i < text.getSize(); ++i)
-        {
-            float charWidth;
-            const std::uint32_t curChar = text[i];
-            if (curChar == '\n')
-                break;
-            else if (curChar == '\t')
-                charWidth = font.getFont()->getGlyph(' ', characterSize, bold).advance * 4.0f;
-            else
-                charWidth = font.getFont()->getGlyph(curChar, characterSize, bold).advance;
-
-            const float kerning = font.getFont()->getKerning(prevChar, curChar, characterSize);
-
-            width = width + charWidth + kerning;
-            prevChar = curChar;
-        }
-
-        return width;
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

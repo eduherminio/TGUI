@@ -334,7 +334,7 @@ namespace tgui
         {
             m_backgroundColorFocusedCached = getSharedRenderer()->getBackgroundColorFocused();
         }
-        else if ((property == "opacity") || (property == "opacitydisabled"))
+        else if (property == "opacity")
         {
             Widget::rendererChanged(property);
 

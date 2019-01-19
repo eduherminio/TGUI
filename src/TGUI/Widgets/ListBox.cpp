@@ -719,13 +719,6 @@ namespace tgui
         else if (property == "scrollbar")
         {
             m_scroll->setRenderer(getSharedRenderer()->getScrollbar());
-
-            // If no scrollbar width was set then we may need to use the one from the texture
-            if (!getSharedRenderer()->getScrollbarWidth())
-            {
-                m_scroll->setSize({m_scroll->getDefaultWidth(), m_scroll->getSize().y});
-                setSize(m_size);
-            }
         }
         else if (property == "scrollbarwidth")
         {
@@ -753,7 +746,7 @@ namespace tgui
         {
             m_selectedBackgroundColorHoverCached = getSharedRenderer()->getSelectedBackgroundColorHover();
         }
-        else if ((property == "opacity") || (property == "opacitydisabled"))
+        else if (property == "opacity")
         {
             Widget::rendererChanged(property);
 
@@ -791,8 +784,8 @@ namespace tgui
 
         if (getItemCount() > 0)
         {
-            const auto& items = getItems();
-            const auto& ids = getItemIds();
+            auto items = getItems();
+            auto& ids = getItemIds();
 
             bool itemIdsUsed = false;
             std::string itemList = "[" + Serializer::serialize(items[0]);
@@ -815,9 +808,6 @@ namespace tgui
 
         if (!m_autoScroll)
             node->propertyValuePairs["AutoScroll"] = std::make_unique<DataIO::ValueNode>("false");
-
-        if (m_selectedItem >= 0)
-            node->propertyValuePairs["SelectedItemIndex"] = std::make_unique<DataIO::ValueNode>(to_string(m_selectedItem));
 
         node->propertyValuePairs["TextSize"] = std::make_unique<DataIO::ValueNode>(to_string(m_textSize));
         node->propertyValuePairs["ItemHeight"] = std::make_unique<DataIO::ValueNode>(to_string(m_itemHeight));
@@ -871,8 +861,6 @@ namespace tgui
             setItemHeight(tgui::stoi(node->propertyValuePairs["itemheight"]->value));
         if (node->propertyValuePairs["maximumitems"])
             setMaximumItems(tgui::stoi(node->propertyValuePairs["maximumitems"]->value));
-        if (node->propertyValuePairs["selecteditemindex"])
-            setSelectedItemByIndex(tgui::stoi(node->propertyValuePairs["selecteditemindex"]->value));
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

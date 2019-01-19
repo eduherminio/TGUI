@@ -45,30 +45,6 @@ namespace tgui
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        void setTextOpacityImpl(std::vector<std::shared_ptr<TreeView::Node>>& nodes, float opacity)
-        {
-            for (auto& node : nodes)
-            {
-                node->text.setOpacity(opacity);
-                if (!node->nodes.empty())
-                    setTextOpacityImpl(node->nodes, opacity);
-            }
-        }
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        void setTextFontImpl(std::vector<std::shared_ptr<TreeView::Node>>& nodes, const Font& font)
-        {
-            for (auto& node : nodes)
-            {
-                node->text.setFont(font);
-                if (!node->nodes.empty())
-                    setTextFontImpl(node->nodes, font);
-            }
-        }
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
         std::shared_ptr<TreeView::Node> cloneNode(const std::shared_ptr<TreeView::Node>& oldNode, TreeView::Node* parent)
         {
             auto newNode = std::make_shared<TreeView::Node>();
@@ -582,6 +558,7 @@ namespace tgui
             m_textSize = Text::findBestTextSize(m_fontCached, m_itemHeight * 0.8f);
 
         setTextSizeImpl(m_nodes, textSize);
+        markNodesDirty();
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -745,11 +722,7 @@ namespace tgui
 
     bool TreeView::mouseWheelScrolled(float delta, Vector2f pos)
     {
-        if (m_horizontalScrollbar->isShown()
-            && (!m_verticalScrollbar->isShown()
-                || m_horizontalScrollbar->mouseOnWidget(pos - getPosition())
-                || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift)
-                || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift)))
+        if (m_horizontalScrollbar->isShown() && m_horizontalScrollbar->mouseOnWidget(pos - getPosition()))
         {
             m_horizontalScrollbar->mouseWheelScrolled(delta, pos - getPosition());
             mouseMoved(pos);
@@ -880,15 +853,6 @@ namespace tgui
         {
             m_verticalScrollbar->setRenderer(getSharedRenderer()->getScrollbar());
             m_horizontalScrollbar->setRenderer(getSharedRenderer()->getScrollbar());
-
-            // If no scrollbar width was set then we may need to use the one from the texture
-            if (!getSharedRenderer()->getScrollbarWidth())
-            {
-                const float width = m_verticalScrollbar->getDefaultWidth();
-                m_verticalScrollbar->setSize({width, m_verticalScrollbar->getSize().y});
-                m_horizontalScrollbar->setSize({m_horizontalScrollbar->getSize().x, width});
-                markNodesDirty();
-            }
         }
         else if (property == "scrollbarwidth")
         {
@@ -897,26 +861,10 @@ namespace tgui
             m_horizontalScrollbar->setSize({m_horizontalScrollbar->getSize().x, width});
             markNodesDirty();
         }
-        else if ((property == "opacity") || (property == "opacitydisabled"))
-        {
-            Widget::rendererChanged(property);
-
-            setTextOpacityImpl(m_nodes, m_opacityCached);
-
-            m_spriteBranchExpanded.setOpacity(m_opacityCached);
-            m_spriteBranchCollapsed.setOpacity(m_opacityCached);
-            m_spriteLeaf.setOpacity(m_opacityCached);
-
-            m_verticalScrollbar->setInheritedOpacity(m_opacityCached);
-            m_horizontalScrollbar->setInheritedOpacity(m_opacityCached);
-        }
-        else if (property == "font")
-        {
-            Widget::rendererChanged(property);
-            setTextFontImpl(m_nodes, m_fontCached);
-        }
         else
+        {
             Widget::rendererChanged(property);
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1149,7 +1097,7 @@ namespace tgui
                 auto statesForIcon = states;
                 const float iconPadding = (m_iconBounds.x / 4.f);
                 const float iconOffset = iconPadding + ((m_iconBounds.x + iconPadding) * m_visibleNodes[i]->depth);
-                statesForIcon.transform.translate(std::round(iconOffset), std::round((i * m_itemHeight) + ((m_itemHeight - m_iconBounds.y) / 2.f)));
+                statesForIcon.transform.translate(iconOffset, std::round((i * m_itemHeight) + ((m_itemHeight - m_iconBounds.y) / 2.f)));
 
                 // Draw an icon for the leaf node if a texture is set
                 if (m_visibleNodes[i]->nodes.empty())
@@ -1185,20 +1133,7 @@ namespace tgui
                     }
                     else // No textures are used
                     {
-                        Color iconColor = m_textColorCached;
-                        if (i == m_selectedItem)
-                        {
-                            if ((m_selectedItem == m_hoveredItem) && m_selectedTextColorHoverCached.isSet())
-                                iconColor = m_selectedTextColorHoverCached;
-                            else if (m_selectedTextColorCached.isSet())
-                                iconColor = m_selectedTextColorCached;
-                        }
-                        if ((i == m_hoveredItem) && (m_selectedItem != m_hoveredItem))
-                        {
-                            if (m_textColorHoverCached.isSet())
-                                iconColor = m_textColorHoverCached;
-                        }
-
+                        const Color& iconColor = (i == m_hoveredItem) ? m_textColorHoverCached : m_textColorCached;
                         const float thickness = std::max(1.f, std::round(m_itemHeight / 10.f));
                         if (m_visibleNodes[i]->expanded)
                         {

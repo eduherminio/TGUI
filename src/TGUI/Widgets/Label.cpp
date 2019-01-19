@@ -28,6 +28,10 @@
 
 #include <cmath>
 
+#ifdef TGUI_USE_CPP17
+    #include <optional>
+#endif
+
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 namespace tgui
@@ -37,12 +41,10 @@ namespace tgui
     Label::Label()
     {
         m_type = "Label";
-        m_draggableWidget = true;
 
         m_renderer = aurora::makeCopied<LabelRenderer>();
         setRenderer(Theme::getDefault()->getRendererNoThrow(m_type));
 
-        m_scrollbar->setVisible(false);
         setTextSize(getGlobalTextSize());
     }
 
@@ -175,31 +177,13 @@ namespace tgui
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void Label::setScrollbarPolicy(Scrollbar::Policy policy)
-    {
-        m_scrollbarPolicy = policy;
-
-        // The policy only has an effect when not auto-sizing
-        if (!m_autoSize)
-            rearrangeText();
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    Scrollbar::Policy Label::getScrollbarPolicy() const
-    {
-        return m_scrollbarPolicy;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     void Label::setAutoSize(bool autoSize)
     {
-        if (m_autoSize == autoSize)
-            return;
-
-        m_autoSize = autoSize;
-        rearrangeText();
+        if (m_autoSize != autoSize)
+        {
+            m_autoSize = autoSize;
+            rearrangeText();
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -213,11 +197,11 @@ namespace tgui
 
     void Label::setMaximumTextWidth(float maximumWidth)
     {
-        if (m_maximumTextWidth == maximumWidth)
-            return;
-
-        m_maximumTextWidth = maximumWidth;
-        rearrangeText();
+        if (m_maximumTextWidth != maximumWidth)
+        {
+            m_maximumTextWidth = maximumWidth;
+            rearrangeText();
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -262,93 +246,26 @@ namespace tgui
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    void Label::leftMousePressed(Vector2f pos)
-    {
-        if (m_scrollbar->isShown() && m_scrollbar->mouseOnWidget(pos - getPosition()))
-        {
-            m_mouseDown = true;
-            m_scrollbar->leftMousePressed(pos - getPosition());
-        }
-        else
-            ClickableWidget::leftMousePressed(pos);
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
     void Label::leftMouseReleased(Vector2f pos)
     {
-        if (!m_scrollbar->isShown() || !m_scrollbar->isMouseDown())
-        {
-            const bool mouseDown = m_mouseDown;
-            ClickableWidget::leftMouseReleased(pos);
+        const bool mouseDown = m_mouseDown;
 
-            if (mouseDown)
+        ClickableWidget::leftMouseReleased(pos);
+
+        if (mouseDown)
+        {
+            // Check if you double-clicked
+            if (m_possibleDoubleClick)
             {
-                // Check if you double-clicked
-                if (m_possibleDoubleClick)
-                {
-                    m_possibleDoubleClick = false;
-                    onDoubleClick.emit(this, m_string);
-                }
-                else // This is the first click
-                {
-                    m_animationTimeElapsed = {};
-                    m_possibleDoubleClick = true;
-                }
-            }
-            else // Mouse didn't go down on the label, so this isn't considered a click
                 m_possibleDoubleClick = false;
+                onDoubleClick.emit(this, m_string);
+            }
+            else // This is the first click
+            {
+                m_animationTimeElapsed = {};
+                m_possibleDoubleClick = true;
+            }
         }
-        else
-            m_mouseDown = false;
-
-        if (m_scrollbar->isShown())
-            m_scrollbar->leftMouseReleased(pos - getPosition());
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    void Label::mouseMoved(Vector2f pos)
-    {
-        if (m_scrollbar->isShown() && ((m_scrollbar->isMouseDown() && m_scrollbar->isMouseDownOnThumb()) || m_scrollbar->mouseOnWidget(pos - getPosition())))
-            m_scrollbar->mouseMoved(pos - getPosition());
-        else
-        {
-            ClickableWidget::mouseMoved(pos);
-
-            if (m_scrollbar->isShown())
-                m_scrollbar->mouseNoLongerOnWidget();
-        }
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    bool Label::mouseWheelScrolled(float delta, Vector2f pos)
-    {
-        if (!m_autoSize && m_scrollbar->isShown())
-        {
-            m_scrollbar->mouseWheelScrolled(delta, pos - getPosition());
-            return true;
-        }
-
-        return false;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    void Label::mouseNoLongerOnWidget()
-    {
-        ClickableWidget::mouseNoLongerOnWidget();
-        m_scrollbar->mouseNoLongerOnWidget();
-        m_possibleDoubleClick = false;
-    }
-
-    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    void Label::mouseNoLongerDown()
-    {
-        ClickableWidget::mouseNoLongerDown();
-        m_scrollbar->mouseNoLongerDown();
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -396,29 +313,12 @@ namespace tgui
         {
             m_backgroundColorCached = getSharedRenderer()->getBackgroundColor();
         }
-        else if (property == "scrollbar")
-        {
-            m_scrollbar->setRenderer(getSharedRenderer()->getScrollbar());
-
-            // If no scrollbar width was set then we may need to use the one from the texture
-            if (!getSharedRenderer()->getScrollbarWidth())
-            {
-                m_scrollbar->setSize({m_scrollbar->getDefaultWidth(), m_scrollbar->getSize().y});
-                rearrangeText();
-            }
-        }
-        else if (property == "scrollbarwidth")
-        {
-            const float width = getSharedRenderer()->getScrollbarWidth() ? getSharedRenderer()->getScrollbarWidth() : m_scrollbar->getDefaultWidth();
-            m_scrollbar->setSize({width, m_scrollbar->getSize().y});
-            rearrangeText();
-        }
         else if (property == "font")
         {
             Widget::rendererChanged(property);
             rearrangeText();
         }
-        else if ((property == "opacity") || (property == "opacitydisabled"))
+        else if (property == "opacity")
         {
             Widget::rendererChanged(property);
 
@@ -454,14 +354,6 @@ namespace tgui
         if (m_ignoringMouseEvents)
             node->propertyValuePairs["IgnoreMouseEvents"] = std::make_unique<DataIO::ValueNode>(Serializer::serialize(m_ignoringMouseEvents));
 
-        if (m_scrollbarPolicy != Scrollbar::Policy::Automatic)
-        {
-            if (m_scrollbarPolicy == Scrollbar::Policy::Always)
-                node->propertyValuePairs["ScrollbarPolicy"] = std::make_unique<DataIO::ValueNode>("Always");
-            else if (m_scrollbarPolicy == Scrollbar::Policy::Never)
-                node->propertyValuePairs["ScrollbarPolicy"] = std::make_unique<DataIO::ValueNode>("Never");
-        }
-
         node->propertyValuePairs["TextSize"] = std::make_unique<DataIO::ValueNode>(to_string(m_textSize));
         return node;
     }
@@ -492,19 +384,6 @@ namespace tgui
                 setVerticalAlignment(Label::VerticalAlignment::Center);
             else if (alignment != "top")
                 throw Exception{"Failed to parse VerticalAlignment property, found unknown value."};
-        }
-
-        if (node->propertyValuePairs["scrollbarpolicy"])
-        {
-            std::string policy = toLower(trim(node->propertyValuePairs["scrollbarpolicy"]->value));
-            if (policy == "automatic")
-                setScrollbarPolicy(Scrollbar::Policy::Automatic);
-            else if (policy == "always")
-                setScrollbarPolicy(Scrollbar::Policy::Always);
-            else if (policy == "never")
-                setScrollbarPolicy(Scrollbar::Policy::Never);
-            else
-                throw Exception{"Failed to parse ScrollbarPolicy property, found unknown value."};
         }
 
         if (node->propertyValuePairs["text"])
@@ -544,27 +423,6 @@ namespace tgui
 
         const float textOffset = Text::getExtraHorizontalPadding(m_fontCached, m_textSize, m_textStyleCached);
 
-        // Show or hide the scrollbar
-        if (m_autoSize)
-            m_scrollbar->setVisible(false);
-        else
-        {
-            if (m_scrollbarPolicy == Scrollbar::Policy::Always)
-            {
-                m_scrollbar->setVisible(true);
-                m_scrollbar->setAutoHide(false);
-            }
-            else if (m_scrollbarPolicy == Scrollbar::Policy::Never)
-            {
-                m_scrollbar->setVisible(false);
-            }
-            else // Scrollbar::Policy::Automatic
-            {
-                m_scrollbar->setVisible(true);
-                m_scrollbar->setAutoHide(true);
-            }
-        }
-
         // Find the maximum width of one line
         float maxWidth;
         if (m_autoSize)
@@ -572,52 +430,12 @@ namespace tgui
         else
         {
             maxWidth = getSize().x - m_bordersCached.getLeft() - m_bordersCached.getRight() - m_paddingCached.getLeft() - m_paddingCached.getRight() - 2*textOffset;
-
-            // If the scrollbar is always visible then we take it into account, otherwise we assume there is no scrollbar
-            if (m_scrollbarPolicy == Scrollbar::Policy::Always)
-                maxWidth -= m_scrollbar->getSize().x;
-
             if (maxWidth <= 0)
                 return;
         }
 
         // Fit the text in the available space
-        sf::String string = Text::wordWrap(maxWidth, m_string, m_fontCached, m_textSize, m_textStyleCached & sf::Text::Bold);
-
-        const Outline outline = {m_paddingCached.getLeft() + m_bordersCached.getLeft(),
-                                 m_paddingCached.getTop() + m_bordersCached.getTop(),
-                                 m_paddingCached.getRight() + m_bordersCached.getRight(),
-                                 m_paddingCached.getBottom() + m_bordersCached.getBottom()};
-
-        const auto lineCount = std::count(string.begin(), string.end(), '\n') + 1;
-        float requiredTextHeight = lineCount * m_fontCached.getLineSpacing(m_textSize)
-                                   + Text::calculateExtraVerticalSpace(m_fontCached, m_textSize, m_textStyleCached)
-                                   + Text::getExtraVerticalPadding(m_textSize);
-
-        // Check if a scrollbar should be added
-        if (!m_autoSize)
-        {
-            // If the text doesn't fit in the label then we need to run the word-wrap again, but this time taking the scrollbar into account
-            if ((m_scrollbarPolicy == Scrollbar::Policy::Automatic) && (requiredTextHeight > getSize().y - outline.getTop() - outline.getBottom()))
-            {
-                maxWidth -= m_scrollbar->getSize().x;
-                if (maxWidth <= 0)
-                    return;
-
-                string = Text::wordWrap(maxWidth, m_string, m_fontCached, m_textSize, m_textStyleCached & sf::Text::Bold);
-
-                const auto newLineCount = std::count(string.begin(), string.end(), '\n') + 1;
-                requiredTextHeight = newLineCount * m_fontCached.getLineSpacing(m_textSize)
-                                     + Text::calculateExtraVerticalSpace(m_fontCached, m_textSize, m_textStyleCached)
-                                     + Text::getExtraVerticalPadding(m_textSize);
-            }
-
-            m_scrollbar->setSize(m_scrollbar->getSize().x, static_cast<unsigned int>(getSize().y - m_bordersCached.getTop() - m_bordersCached.getBottom()));
-            m_scrollbar->setViewportSize(static_cast<unsigned int>(getSize().y - outline.getTop() - outline.getBottom()));
-            m_scrollbar->setMaximum(static_cast<unsigned int>(requiredTextHeight));
-            m_scrollbar->setPosition({getSize().x - m_bordersCached.getRight() - m_scrollbar->getSize().x, m_bordersCached.getTop()});
-            m_scrollbar->setScrollAmount(m_textSize);
-        }
+        const sf::String string = Text::wordWrap(maxWidth, m_string, m_fontCached, m_textSize, m_textStyleCached & sf::Text::Bold);
 
         // Split the string in multiple lines
         float width = 0;
@@ -645,10 +463,19 @@ namespace tgui
             searchPosStart = newLinePos + 1;
         }
 
+        const Outline outline = {m_paddingCached.getLeft() + m_bordersCached.getLeft(),
+                                 m_paddingCached.getTop() + m_bordersCached.getTop(),
+                                 m_paddingCached.getRight() + m_bordersCached.getRight(),
+                                 m_paddingCached.getBottom() + m_bordersCached.getBottom()};
+
         // Update the size of the label
         if (m_autoSize)
         {
-            Widget::setSize({std::max(width, maxWidth) + outline.getLeft() + outline.getRight() + 2*textOffset, requiredTextHeight + outline.getTop() + outline.getBottom()});
+            Widget::setSize({std::max(width, maxWidth) + outline.getLeft() + outline.getRight() + 2*textOffset,
+                            (std::max<std::size_t>(m_lines.size(), 1) * m_fontCached.getLineSpacing(m_textSize))
+                             + Text::calculateExtraVerticalSpace(m_fontCached, m_textSize, m_textStyleCached)
+                             + Text::getExtraVerticalPadding(m_textSize) + outline.getTop() + outline.getBottom()});
+
             m_bordersCached.updateParentSize(getSize());
             m_paddingCached.updateParentSize(getSize());
         }
@@ -708,7 +535,6 @@ namespace tgui
     void Label::draw(sf::RenderTarget& target, sf::RenderStates states) const
     {
         states.transform.translate(std::round(getPosition().x), std::round(getPosition().y));
-        const sf::RenderStates statesForScrollbar = states;
 
         Vector2f innerSize = {getSize().x - m_bordersCached.getLeft() - m_bordersCached.getRight(),
                               getSize().y - m_bordersCached.getTop() - m_bordersCached.getBottom()};
@@ -724,29 +550,27 @@ namespace tgui
         if (m_backgroundColorCached.isSet() && (m_backgroundColorCached != Color::Transparent))
             drawRectangleShape(target, states, innerSize, m_backgroundColorCached);
 
-        // Draw the scrollbar
-        if (m_scrollbar->isVisible())
-            m_scrollbar->draw(target, statesForScrollbar);
-
-        // Draw the text
-        if (m_autoSize)
-        {
-            for (const auto& line : m_lines)
-                line.draw(target, states);
-        }
-        else
+        // Apply clipping when needed
+    #ifdef TGUI_USE_CPP17
+        std::optional<Clipping> clipping;
+    #else
+        std::unique_ptr<Clipping> clipping;
+    #endif
+        if (!m_autoSize)
         {
             innerSize.x -= m_paddingCached.getLeft() + m_paddingCached.getRight();
             innerSize.y -= m_paddingCached.getTop() + m_paddingCached.getBottom();
 
-            const Clipping clipping{target, states, Vector2f{m_paddingCached.getLeft(), m_paddingCached.getTop()}, innerSize};
-
-            if (m_scrollbar->isShown())
-                states.transform.translate({0, -static_cast<float>(m_scrollbar->getValue())});
-
-            for (const auto& line : m_lines)
-                line.draw(target, states);
+        #ifdef TGUI_USE_CPP17
+            clipping.emplace(target, states, Vector2f{m_paddingCached.getLeft(), m_paddingCached.getTop()}, innerSize);
+        #else
+            clipping = std::make_unique<Clipping>(target, states, Vector2f{m_paddingCached.getLeft(), m_paddingCached.getTop()}, innerSize);
+        #endif
         }
+
+        // Draw the text
+        for (const auto& line : m_lines)
+            line.draw(target, states);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

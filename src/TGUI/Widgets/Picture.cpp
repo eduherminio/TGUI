@@ -186,7 +186,7 @@ namespace tgui
 
             m_sprite.setTexture(texture);
         }
-        else if ((property == "opacity") || (property == "opacitydisabled"))
+        else if (property == "opacity")
         {
             Widget::rendererChanged(property);
             m_sprite.setOpacity(m_opacityCached);

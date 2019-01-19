@@ -504,7 +504,7 @@ namespace tgui
         {
             m_imageRotationCached = getSharedRenderer()->getImageRotation();
         }
-        else if ((property == "opacity") || (property == "opacitydisabled"))
+        else if (property == "opacity")
         {
             Widget::rendererChanged(property);
 

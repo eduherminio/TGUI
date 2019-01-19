@@ -507,9 +507,7 @@ namespace tgui
                         [=](){ setVisible(false); setPosition(position); onAnimationFinished.emit(this, type, false); }));
                 }
                 else
-                {
                     TGUI_PRINT_WARNING("hideWithEffect(SlideToRight) does not work before widget has a parent.");
-                }
 
                 break;
             }
@@ -527,9 +525,7 @@ namespace tgui
                         [=](){ setVisible(false); setPosition(position); onAnimationFinished.emit(this, type, false); }));
                 }
                 else
-                {
                     TGUI_PRINT_WARNING("hideWithEffect(SlideToBottom) does not work before widget has a parent.");
-                }
 
                 break;
             }
@@ -565,10 +561,6 @@ namespace tgui
             m_mouseDown = false;
             setFocused(false);
         }
-
-        // Refresh widget opacity if there is a different value set for enabled and disabled widgets
-        if (getSharedRenderer()->getOpacityDisabled() != -1)
-            rendererChanged("opacitydisabled");
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -835,12 +827,9 @@ namespace tgui
 
     void Widget::rendererChanged(const std::string& property)
     {
-        if ((property == "opacity") || (property == "opacitydisabled"))
+        if (property == "opacity")
         {
-            if (!m_enabled && (getSharedRenderer()->getOpacityDisabled() != -1))
-                m_opacityCached = getSharedRenderer()->getOpacityDisabled() * m_inheritedOpacity;
-            else
-                m_opacityCached = getSharedRenderer()->getOpacity() * m_inheritedOpacity;
+            m_opacityCached = getSharedRenderer()->getOpacity() * m_inheritedOpacity;
         }
         else if (property == "font")
         {

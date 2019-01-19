@@ -29,8 +29,6 @@
 
 #include <TGUI/Widgets/ClickableWidget.hpp>
 #include <TGUI/Renderers/LabelRenderer.hpp>
-#include <TGUI/CopiedSharedPtr.hpp>
-#include <TGUI/Widgets/Scrollbar.hpp>
 #include <TGUI/Text.hpp>
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -47,10 +45,6 @@ namespace tgui
         typedef std::shared_ptr<Label> Ptr; ///< Shared widget pointer
         typedef std::shared_ptr<const Label> ConstPtr; ///< Shared constant widget pointer
 
-#ifndef TGUI_REMOVE_DEPRECATED_CODE
-        /// @brief Defines when the scrollbar shows up
-        using ScrollbarPolicy TGUI_DEPRECATED("Use tgui::Scrollbar::Policy instead") = Scrollbar::Policy;
-#endif
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief The horizontal text alignment
@@ -218,20 +212,6 @@ namespace tgui
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Changes when the vertical scrollbar should be displayed
-        /// @param policy  The policy for displaying the vertical scrollbar
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        void setScrollbarPolicy(Scrollbar::Policy policy);
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Returns when the vertical scrollbar should be displayed
-        /// @return The policy for displaying the vertical scrollbar
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Scrollbar::Policy getScrollbarPolicy() const;
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief Changes whether the label is auto-sized or not
         ///
         /// @param autoSize  Should the size of the label be changed when the text changes?
@@ -316,23 +296,10 @@ namespace tgui
         bool canGainFocus() const override;
 
 
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @internal
-        void leftMousePressed(Vector2f pos) override;
-
-        /// @internal
+        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         void leftMouseReleased(Vector2f pos) override;
-
-        /// @internal
-        void mouseMoved(Vector2f pos) override;
-
-        /// @internal
-        bool mouseWheelScrolled(float delta, Vector2f pos) override;
-
-        /// @internal
-        void mouseNoLongerOnWidget() override;
-
-        /// @internal
-        void mouseNoLongerDown() override;
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -426,13 +393,6 @@ namespace tgui
 
         // Will be set to true after the first click, but gets reset to false when the second click does not occur soon after
         bool m_possibleDoubleClick = false;
-
-        CopiedSharedPtr<ScrollbarChildWidget> m_scrollbar;
-#ifdef TGUI_NEXT
-        Scrollbar::Policy  m_scrollbarPolicy = Scrollbar::Policy::Automatic;
-#else
-        Scrollbar::Policy  m_scrollbarPolicy = Scrollbar::Policy::Never;
-#endif
 
         // Cached renderer properties
         Borders   m_bordersCached;

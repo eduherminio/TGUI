@@ -70,7 +70,6 @@ EditBox {
 
 Label {
     TextColor = rgb(100, 100, 100);
-    Scrollbar = &Scrollbar;
 }
 
 ListBox {

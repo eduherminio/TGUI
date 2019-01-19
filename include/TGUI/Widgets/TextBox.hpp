@@ -229,30 +229,6 @@ namespace tgui
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         bool isReadOnly() const;
 
-#ifndef TGUI_REMOVE_DEPRECATED_CODE
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Sets whether the horizontal scrollbar is present
-        ///
-        /// When present, the scrollbar will appear once the text takes more space than the text box.
-        /// When not present, the text will attempt to word wrap once the text line is full.
-        /// The horizontal scroll is not present by default.
-        ///
-        /// @param present  Should the horizontal scrollbar be present?
-        ///
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        TGUI_DEPRECATED("Use setHorizontalScrollbarPolicy instead") void setHorizontalScrollbarPresent(bool present);
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Returns whether the horizontal scrollbar is present
-        ///
-        /// @return Is the horizontal scrollbar present?
-        ///
-        /// @see setHorizontalScrollbarPresent
-        ///
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        TGUI_DEPRECATED("Use getHorizontalScrollbarPolicy instead") bool isHorizontalScrollbarPresent() const;
-
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         /// @brief Sets whether the vertical scrollbar is present
@@ -264,7 +240,7 @@ namespace tgui
         /// @param present  Should the vertical scrollbar be present?
         ///
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        TGUI_DEPRECATED("Use setVerticalScrollbarPolicy instead") void setVerticalScrollbarPresent(bool present);
+        void setVerticalScrollbarPresent(bool present);
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -275,43 +251,7 @@ namespace tgui
         /// @see setVerticalScrollbarPresent
         ///
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        TGUI_DEPRECATED("Use getVerticalScrollbarPolicy instead") bool isVerticalScrollbarPresent() const;
-#endif
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Changes when the vertical scrollbar should be displayed
-        /// @param policy  The policy for displaying the vertical scrollbar
-        ///
-        /// The default policy is Automatic, which means it only shows when the text doesn't fit inside the TextBox.
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        void setVerticalScrollbarPolicy(Scrollbar::Policy policy);
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Returns when the vertical scrollbar should be displayed
-        /// @return The policy for displaying the vertical scrollbar
-        ///
-        /// The default policy is Automatic, which means it only shows when the text doesn't fit inside the TextBox.
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Scrollbar::Policy getVerticalScrollbarPolicy() const;
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Changes when the horizontal scrollbar should be displayed
-        /// @param policy  The policy for displaying the horizontal scrollbar
-        ///
-        /// The default policy is Never, which means word-wrap will be used to keep the text within the TextBox.
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        void setHorizontalScrollbarPolicy(Scrollbar::Policy policy);
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Returns when the horizontal scrollbar should be displayed
-        /// @return The policy for displaying the horizontal scrollbar
-        ///
-        /// The default policy is Never, which means word-wrap will be used to keep the text within the TextBox.
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        Scrollbar::Policy getHorizontalScrollbarPolicy() const;
+        bool isVerticalScrollbarPresent() const;
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -334,20 +274,6 @@ namespace tgui
         /// @warning This function only works properly when the widget was already added to its parent (e.g. the Gui).
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         void setFocused(bool focused) override;
-
-
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        /// @brief Changes whether an optimization is made that only works when using a monospaced font
-        ///
-        /// @param enable  Whether the optimization should be enabled
-        ///
-        /// Rearranging text when a horizontal scrollbar is enabled can be almost as expensive as the word-wrap which is
-        /// performed when there is no horizontal scrollbar. When using a monospaced font there is no need for such expensive
-        /// calculation. Call this function when using a monospaced font to make changing the text faster.
-        ///
-        /// This function has no effect when the horizontal scrollbar is disabled (default).
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        void enableMonospacedFontOptimization(bool enable = true);
 
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -435,10 +361,6 @@ namespace tgui
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         void rearrangeText(bool keepSelection);
 
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Updates the physical size of the scrollbars, as well as the viewport size.
-        /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        void updateScrollbars();
 
         /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // This function will split the text into five pieces so that the text can be easily drawn.
@@ -538,9 +460,6 @@ namespace tgui
         unsigned int m_textSize = 18;
         unsigned int m_lineHeight = 24;
 
-        // The width of the largest line
-        float m_maxLineWidth;
-
         std::vector<sf::String> m_lines;
 
         // The maximum characters (0 by default, which means no limit)
@@ -566,18 +485,13 @@ namespace tgui
 
         std::vector<FloatRect> m_selectionRects;
 
-        // The scrollbars
-        CopiedSharedPtr<ScrollbarChildWidget> m_verticalScrollbar;
-        CopiedSharedPtr<ScrollbarChildWidget> m_horizontalScrollbar;
-        Scrollbar::Policy m_verticalScrollbarPolicy = Scrollbar::Policy::Automatic;
-        Scrollbar::Policy m_horizontalScrollbarPolicy = Scrollbar::Policy::Never;
+        // The scrollbar
+        CopiedSharedPtr<ScrollbarChildWidget> m_verticalScroll;
 
         // Is there a possibility that the user is going to double click?
         bool m_possibleDoubleClick = false;
 
         bool m_readOnly = false;
-
-        bool m_monospacedFontOptimizationEnabled = false;
 
         Sprite m_spriteBackground;
 

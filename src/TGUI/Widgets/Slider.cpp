@@ -520,7 +520,7 @@ namespace tgui
         {
             m_borderColorHoverCached = getSharedRenderer()->getBorderColorHover();
         }
-        else if ((property == "opacity") || (property == "opacitydisabled"))
+        else if (property == "opacity")
         {
             Widget::rendererChanged(property);
 
